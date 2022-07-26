@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import bodyParser from 'body-parser';
+import bodyParser from 'body-parser'; //parse inbound requests
 
 import { Car, cars as cars_list } from './cars';
 
@@ -70,14 +70,65 @@ import { Car, cars as cars_list } from './cars';
 
   // @TODO Add an endpoint to GET a list of cars
   // it should be filterable by make with a query paramater
+  app.get("/cars", (req:Request,res:Response)=>{
+    let {make} = req.query
+    let cars_list = cars
+    //if we have an option query parameter, filter by it,
+    if(make)
+    {
+      cars_list = cars.filter((car)=> car.make === make)
 
+      // return the resulting list along with the 200 success
+      res.status(200).send(cars_list)
+    }
+  })
   // @TODO Add an endpoint to get a specific car
   // it should require id
   // it should fail gracefully if no matching car is found
+  app.get("/cars/:id", (req:Request,res:Response)=>{
+    //destructure our path parameter
+    let { id } = req.params
+   //check to ensure that the id is set
+   if(!id)
+   {
+     //respond with an error if not
+     return res.status(400).send(`ID is required.`)
+   }
+   //try to find the car by ID
+   const car = cars.filter( (car) => car.id == id)
+   
+   //respond not found if we do not have this matching id
+   if(car && car.length === 0)
+   {
+     return res.status(404).send(`Car is not found`)
+   }
+
+   //return the car with success status code
+   res.status(200).send(car)
+  }) 
 
   /// @TODO Add an endpoint to post a new car to our list
   // it should require id, type, model, and cost
+app.post("/cars:name", (req:Request,res: Response) =>{
+  //destructure our body payload for our variable
+  let {make, type, model, cost, id} = req.body
+  //check to make sure all required variables are set
+  if(!id || !type || !model || !cost) {
+    //respond with an error if not
+    return res.status(400)
+        .send(`make, type, model, cost, id are required`)
+  }
 
+  //create new car instance
+  const new_car: Car ={
+    make: make, type: type, model: model, cost: cost, id:id
+  }
+  //add cars to local variables
+  cars.push(new_car)
+
+  //send the complete car object as a response along with 201-creation success.
+  res.status(201).send(new_car)
+})
   // Start the Server
   app.listen( port, () => {
       console.log( `server running http://localhost:${ port }` );
